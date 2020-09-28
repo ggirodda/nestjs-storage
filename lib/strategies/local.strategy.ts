@@ -12,14 +12,15 @@ export class LocalStrategy extends BaseStrategy implements StrategyInterface {
     super(config);
   }
 
-  async generateSharedAccessSignature(filename: string): Promise<string> {
-    return `${this.config.baseUrl}/${this.config.destinationDir}/${filename}`;
+  async getPublicUrl(path: string): Promise<string> {
+    return `${this.config.baseUrl}/${this.config.destinationDir}/${path}`;
   }
 
   getMulterConfig(): { storage: StorageEngine } {
     return {
       storage: getStorage({
         destination: `${this.config.publicDir}/${this.config.destinationDir}`,
+        fileSystem: this.config.fileSystem,
       }),
     };
   }

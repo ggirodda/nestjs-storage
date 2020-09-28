@@ -1,14 +1,25 @@
 import { STORAGE_KINDS } from '../storage.constants';
 import { LocalStrategy } from './local.strategy';
 import { AzureStrategy } from './azure.strategy';
-import { StorageModuleConfig, StrategyInterface } from '../storage.interfaces';
+import {
+  StorageModuleConfig,
+  StorageModuleFileSystemConfig,
+  StorageModuleFileSystemStrategyMap,
+  StorageModuleAzureConfig,
+  StorageModuleLocalConfig
+} from '../storage.interfaces';
 
-export const getStrategy = (config: StorageModuleConfig): StrategyInterface => {
-  switch (config.fileSystem) {
-    case STORAGE_KINDS.AZURE:
-      return new AzureStrategy(config[STORAGE_KINDS.AZURE]);
-    case STORAGE_KINDS.LOCAL:
-    default:
-      return new LocalStrategy(config[STORAGE_KINDS.LOCAL]);
-  }
+export const getFileSystems = (config: StorageModuleConfig): StorageModuleFileSystemStrategyMap => {
+  return Object.keys(config.fileSystems).reduce((fileSystems, key) => {
+    const fileSystemConfig: StorageModuleFileSystemConfig = config.fileSystems[key];
+    switch (fileSystemConfig.strategy) {
+      case STORAGE_KINDS.AZURE:
+        fileSystems[key] = new AzureStrategy({ ...fileSystemConfig, fileSystem: key } as StorageModuleAzureConfig);
+        break;
+      case STORAGE_KINDS.LOCAL:
+      default:
+        fileSystems[key] = new LocalStrategy({ ...fileSystemConfig, fileSystem: key } as StorageModuleLocalConfig);
+    }
+    return fileSystems
+  }, {});
 };

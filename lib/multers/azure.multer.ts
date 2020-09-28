@@ -13,6 +13,8 @@ interface StorageOptionsConnString {
   account?: never;
   key?: never;
   container: string;
+  isPublic: boolean;
+  fileSystem: string;
   pathResolver?: BlobPathResolver;
 }
 
@@ -21,6 +23,8 @@ interface StorageOptionsAcconutKey {
   account: string;
   key: string;
   container: string;
+  isPublic: boolean;
+  fileSystem: string;
   pathResolver?: BlobPathResolver;
 }
 
@@ -31,6 +35,8 @@ export type StorageOptions =
 export class AzureMulter implements StorageEngine {
   private container: string;
   private blobSvc: azure.BlobService;
+  private isPublic: boolean;
+  private fileSystem: string;
   private pathResolver: (
     req: any,
     file: any,
@@ -43,14 +49,18 @@ export class AzureMulter implements StorageEngine {
     this.blobSvc = opts.connectionString
       ? azure.createBlobService(opts.connectionString)
       : azure.createBlobService(opts.account, opts.key);
+    this.isPublic = opts.isPublic;
+    this.fileSystem = opts.fileSystem;
+    this.error = null;
     this.createContainer(this.container);
     this.pathResolver = opts.pathResolver || getFilename;
-    this.error = null;
   }
 
   //This creates the container if one doesn't exist
   private createContainer(name: string) {
-    this.blobSvc.createContainerIfNotExists(name, (error) => {
+    const publicAccessLevel = this.isPublic ? "container" : "private"
+    const options = { publicAccessLevel }
+    this.blobSvc.createContainerIfNotExists(name, options, (error) => {
       if (error) {
         this.error = error;
       }
@@ -70,9 +80,9 @@ export class AzureMulter implements StorageEngine {
         },
       );
       file.stream.pipe(blobStream);
-      blobStream.on('close', function () {
+      blobStream.on('close', () => {
         const fileClone = JSON.parse(JSON.stringify(file));
-        fileClone.container = this.container;
+        fileClone.fileSystem = this.fileSystem;
         fileClone.path = path;
         cb(null, fileClone);
       });

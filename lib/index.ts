@@ -4,3 +4,4 @@ export * from './storage.interfaces';
 export * from './storage.module';
 export * from './storage.service';
 export * from './storage.subscriber';
+export * from './strategies';

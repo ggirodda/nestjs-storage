@@ -8,7 +8,7 @@ import {
   UploadFileFields,
 } from './storage.interfaces';
 import { STORAGE_KINDS } from './storage.constants';
-import { getStrategy } from './strategies';
+import { getFileSystems } from './strategies';
 import { plainToClass } from 'class-transformer';
 
 type StorageClass<T> = new (service: StorageService) => T;
@@ -16,29 +16,34 @@ type StorageClass<T> = new (service: StorageService) => T;
 @Injectable()
 export class StorageService {
   private config: StorageModuleConfig;
-  private strategy: StrategyInterface;
+  private fileSystems: { [key: string]: StrategyInterface };
   constructor(
     @Inject(STORAGE_MODULE_OPTIONS)
     private readonly initialConfig: StorageModuleConfig,
   ) {
     this.config = {
-      fileSystem: STORAGE_KINDS.LOCAL,
-      maxFileSize: '8000000',
-      local: {
-        publicDir: 'public',
-        destinationDir: 'storage',
-        baseUrl: 'http://localhost',
+      defaultFileSystem: "local",
+      maxFileSize: 8000000,
+      fileSystems: {
+        local: {
+          fileSystem: "local",
+          strategy: STORAGE_KINDS.LOCAL,
+          publicDir: 'public',
+          destinationDir: 'storage',
+          baseUrl: 'http://localhost',
+        },
       },
       ...this.initialConfig,
     };
-    this.strategy = getStrategy(this.config);
+    this.fileSystems = getFileSystems(this.config);
   }
 
-  getMulterConfig(): MulterModuleOptions {
+  getMulterConfig(fileSystem?: string): MulterModuleOptions {
+    fileSystem = fileSystem || this.config.defaultFileSystem
     return {
-      ...this.strategy.getMulterConfig(),
+      ...this.fileSystems[fileSystem].getMulterConfig(),
       limits: {
-        fileSize: parseInt(this.config.maxFileSize),
+        fileSize: this.config.maxFileSize,
       },
     };
   }
@@ -48,7 +53,8 @@ export class StorageService {
     uploadFileFields: UploadFileFields | null,
   ): T | null | undefined {
     if (uploadFileFields) {
-      const classFields: StorageInterface = this.strategy.getStorageClassFieldsFromUploadedFile(
+      const { fileSystem } = uploadFileFields;
+      const classFields: StorageInterface = this.fileSystems[fileSystem].getStorageClassFieldsFromUploadedFile(
         uploadFileFields,
       ) as StorageInterface;
       return plainToClass(storageClass, classFields);
@@ -57,7 +63,7 @@ export class StorageService {
     }
   }
 
-  async replaceBySasUrl(path: string): Promise<string> {
-    return this.strategy.generateSharedAccessSignature(path);
+  async getPublicUrl(path: string, fileSystem: string): Promise<string> {
+    return this.fileSystems[fileSystem].getPublicUrl(path);
   }
 }

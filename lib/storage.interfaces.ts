@@ -1,22 +1,32 @@
 import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { MulterModuleOptions } from '@nestjs/platform-express';
 
-export interface StorageModuleAzureConfig {
+export interface StorageModuleFileSystemBaseConfig {
+  strategy: string;
+  fileSystem?: string;
+}
+
+export interface StorageModuleAzureConfig extends StorageModuleFileSystemBaseConfig {
   connectionString: string;
   container: string;
-  sasTime?: string;
+  sasTime?: number;
+  isPublic?: boolean;
 }
-export interface StorageModuleLocalConfig {
+
+export interface StorageModuleLocalConfig extends StorageModuleFileSystemBaseConfig {
   baseUrl: string;
   publicDir: string;
   destinationDir: string;
 }
 
+export type StorageModuleFileSystemConfig = StorageModuleLocalConfig | StorageModuleAzureConfig
+
+export interface StorageModuleFileSystemConfigMap { [key: string]: StorageModuleFileSystemConfig; }
+
 export interface StorageModuleConfig {
-  fileSystem?: string;
-  maxFileSize?: string;
-  local?: StorageModuleLocalConfig;
-  azure?: StorageModuleAzureConfig;
+  defaultFileSystem?: string;
+  maxFileSize?: number;
+  fileSystems?: StorageModuleFileSystemConfigMap
 }
 
 export interface StorageModuleAsyncOptions
@@ -31,6 +41,7 @@ export interface UploadFileFields {
   fieldname: string;
   originalname: string;
   mimetype: string;
+  fileSystem: string;
   path?: string;
   filename?: string;
 }
@@ -40,6 +51,7 @@ export interface StorageFields {
   originalname: string;
   mimetype: string;
   path: string;
+  fileSystem: string;
 }
 
 export interface StorageInterface extends StorageFields {
@@ -47,12 +59,14 @@ export interface StorageInterface extends StorageFields {
 }
 
 export interface StrategyInterface {
-  generateSharedAccessSignature: (blobName: string) => Promise<string>;
+  getPublicUrl: (path: string) => Promise<string>;
   getMulterConfig: () => MulterModuleOptions;
   getStorageClassFieldsFromUploadedFile: (
     fields: UploadFileFields,
   ) => StorageFields;
 }
+
+export interface StorageModuleFileSystemStrategyMap { [key: string]: StrategyInterface; }
 
 export interface MulterInterface {
   _handleFile: (req: any, file: any, cb: any) => void;

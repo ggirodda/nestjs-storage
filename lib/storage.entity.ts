@@ -44,6 +44,14 @@ export class Storage implements StorageInterface {
   path: string;
 
   @ApiProperty({
+    example: 'someFileSystem',
+    description: 'fileSystem used for this media',
+    type: String
+  })
+  @Column()
+  fileSystem: string;
+
+  @ApiProperty({
     example: 'http://somedomain.com/folder/6f329ad89bf8fd44f5dd541674dcbf52.png',
     description: 'file publiic url',
     type: String

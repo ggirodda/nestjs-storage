@@ -1,6 +1,6 @@
 {
   "name": "@neoxia-js/nestjs-storage",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "nestjs module allawing communication with different kind of local and cloud storage",
   "main": "dist/index.js",
   "author": "<alabresec@gmail.com>",

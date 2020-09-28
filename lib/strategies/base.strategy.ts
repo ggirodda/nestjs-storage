@@ -9,13 +9,14 @@ export abstract class BaseStrategy {
   getStorageClassFieldsFromUploadedFile(
     uploadFileFields: UploadFileFields,
   ): StorageFields {
-    const { fieldname, originalname, mimetype, filename } = uploadFileFields;
+    const { fieldname, originalname, mimetype, filename, fileSystem } = uploadFileFields;
 
     return {
       fieldname,
       originalname,
       mimetype,
       path: filename,
+      fileSystem
     };
   }
 }
